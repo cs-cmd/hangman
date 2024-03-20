@@ -28,15 +28,15 @@
 use rand::Rng;
 use std::fs;
 
-pub fn choose_random_word(filename: &str) -> Result<String, String> {
+pub fn choose_random_word(filename: &str) -> Result<String, &'static str> {
     if filename.len() == 0 {
-        return Err("Filename cannot be blank".to_string());
+        return Err("Filename cannot be blank");
     }
 
     let mut file_words: Vec<String> = Vec::new();
         
     match fs::read_to_string(filename) {
-        Err(err) => return Err(format!("unable to read word file: {:?}", err)),    
+        Err(err) => return Err("Unable to read word file"),    
         Ok(words) => {
             for line in words.lines() {
                 file_words.push(line.to_string());
@@ -45,7 +45,7 @@ pub fn choose_random_word(filename: &str) -> Result<String, String> {
     };
 
     if file_words.len() == 0 {
-        return Err("No words in file".to_string());
+        return Err("No words in file");
     }
 
 

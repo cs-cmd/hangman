@@ -2,6 +2,7 @@ pub mod word_manager;
 pub mod ui_manager;
 
 use std::collections::HashSet;
+use std::fmt;
 
 // can also use HashMap to combine the two `guesses` maps into a single
 // variables <char, bool> (if guesses, is either true or false if it contains
@@ -17,9 +18,9 @@ const LIVES_MAX: u8 = 5;
 const LIFE_ICON: char = 'x';
 
 impl Hangman {
-    pub fn new(word: &str) -> Hangman {
+    pub fn new(word: String) -> Hangman {
         return Hangman {
-            chosen_word: String::from(word),
+            chosen_word: word,
             successful_guesses: HashSet::new(),
             wrong_guesses: HashSet::new(),
             lives: LIVES_MAX,
@@ -66,21 +67,19 @@ impl Hangman {
     }
 }
 
+impl fmt::Display for Hangman {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        return write!(f, "Hangman instance word: {}", self.chosen_word);
+    }
+}
+
 #[allow(dead_code)]
 pub fn print_header() {
     todo!();
 }
 
-pub fn initialize(file_name: &str) -> Hangman {
-    // init word manager
-    // get word from manager
-    // load word into hangman instance, 
-    // return to 
+pub fn initialize(file_name: &str) -> Result<Hangman, &'static str> {
+    let chosen_word = word_manager::choose_random_word(file_name)?;
 
-    let chosen_word = match word_manager::choose_random_word(file_name) {
-        Ok(word) => word,
-        Err(err_msg) => panic!("Error: {:?}", err_msg),
-    };
-    
-    return Hangman::new(&chosen_word);
+    return Ok(Hangman::new(chosen_word));
 }

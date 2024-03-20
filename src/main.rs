@@ -1,6 +1,6 @@
 mod hangman;
 
-use std::io;
+use std::io::{self, Write};
 //use crate::hangman::word_manager::WordManager;
 use crate::hangman::word_manager;
 
@@ -18,7 +18,8 @@ fn main() {
 
     loop {
         print!("Please enter your name: ");
-    
+        let _ = io::stdout().flush();
+        
         if let Ok(_) = io::stdin().read_line(&mut user_name) {
             break;
         }        
@@ -26,25 +27,18 @@ fn main() {
         println!("Invalid name value, please re-enter.");
     }
 
-    loop {
+    let hangman_instance = loop {
         print!("Please enter file that contains words for game: ");
+        let _ = io::stdout().flush();
+        let _ = io::stdin().read_line(&mut file_name);
 
-        if let Ok(_) = io::stdin().read_line(&mut file_name) {
-            break;
+        match hangman::initialize(&file_name) {
+            Ok(instance) => break instance,
+            Err(NotFound) => println!("File not found"),
+            Err(err_msg) => println!("Error: {:?}", err_msg)
         }
+    };
 
-        println!("Filename could no be read in; please try again.");
-    }
-
-    println!("Hangman starting...");
-    // let word_manager = match WordManager::new(&file_name) {
-    //     Err(err_msg) => panic!("WordManager could not be created; cause: {}", err_msg),
-    //     Ok(wm) => wm,
-    // };
-    // let selected_word = word_manager::choose_random_word(&file_name);
-    match word_manager::choose_random_word(&file_name) {
-        Err(_) => println!("Cannot choose word"),
-        Ok(word) => println!("Selected word: {}", &word),
-    }
+    println!("The selected word is: {}", hangman_instance);
 }
 
