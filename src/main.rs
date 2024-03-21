@@ -2,42 +2,15 @@ mod hangman;
 
 use std::io::{self, Write};
 //use crate::hangman::word_manager::WordManager;
-use crate::hangman::word_manager;
+use crate::hangman::{word_manager, ui_manager, game_setup};
 
 fn main() {
-    let ast_line = "***************************************"; 
-    println!("{ast_line}");
-    println!("*** Welcome to the Hangman Program! ***");
-    println!("{ast_line}");
-    
-    // try to read .config file
-    // if file doesn't exist, create it after getting username and filename
+    ui_manager::print_header();
 
-    let mut user_name = String::new();
-    let mut file_name = String::new();
-
-    loop {
-        print!("Please enter your name: ");
-        let _ = io::stdout().flush();
-        
-        if let Ok(_) = io::stdin().read_line(&mut user_name) {
-            break;
-        }        
-        
-        println!("Invalid name value, please re-enter.");
+    let config = match File::open(".config") {
+        Err(_) => game_setup::first_time_setup(),
+        Ok(file_handle) => game_setup::setup(file_handle),
     }
-
-    let hangman_instance = loop {
-        print!("Please enter file that contains words for game: ");
-        let _ = io::stdout().flush();
-        let _ = io::stdin().read_line(&mut file_name);
-
-        match hangman::initialize(&file_name) {
-            Ok(instance) => break instance,
-            Err(NotFound) => println!("File not found"),
-            Err(err_msg) => println!("Error: {:?}", err_msg)
-        }
-    };
 
     println!("The selected word is: {}", hangman_instance);
 }

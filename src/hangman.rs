@@ -1,5 +1,6 @@
 pub mod word_manager;
 pub mod ui_manager;
+pub mod game_setup;
 
 use std::collections::HashSet;
 use std::fmt;
@@ -12,18 +13,29 @@ pub struct Hangman {
     successful_guesses: HashSet::<char>,
     wrong_guesses: HashSet::<char>,
     lives: u8,
+    life_icon: char,
 }
 
-const LIVES_MAX: u8 = 5;
-const LIFE_ICON: char = 'x';
-
 impl Hangman {
+    const MAX_LIVES: u8 = 5;
+    const DEFAULT_LIFE_ICON: char = 'x';
+
     pub fn new(word: String) -> Hangman {
         return Hangman {
             chosen_word: word,
             successful_guesses: HashSet::new(),
             wrong_guesses: HashSet::new(),
-            lives: LIVES_MAX,
+            lives: MAX_LIVES,
+            life_icon: DEFAULT_LIFE_ICON,
+        };
+    }
+    pub fn new_with_options(word: String, life_icon: char) -> Hangman {
+        return Hangman {
+            chosen_word: word,
+            successful_guesses: HashSet::new(),
+            wrong_guesses: HashSet::new(),
+            lives: MAX_LIVES,
+            life_icon,
         };
     }
 
@@ -31,16 +43,14 @@ impl Hangman {
     pub fn print_lifebar(&self) -> String {
         let mut lifebar = String::from("[");
 
-        for life in 1..=LIVES_MAX {
-            lifebar.push_str({
-                if life < self.lives {
-                    // format!(" {}", LIFE_ICON); // returns String
-                    // concat!(" {}", LIFE_ICON); // this expects string literal 
-                    " x" // Write code to allow for custom user life point icons
-                } else {
-                    " _"
-                }
-            });
+        for life in 1..=MAX_LIVES {
+            lifebar.push(' ');
+
+            lifebar.push(if life <= self.lives {
+                self.life_icon
+            } else {
+                ' '
+            });   
         }
 
         lifebar.push_str(" ]");
@@ -73,13 +83,8 @@ impl fmt::Display for Hangman {
     }
 }
 
-#[allow(dead_code)]
-pub fn print_header() {
-    todo!();
-}
+pub fn initialize(config: &Config) -> Result<Hangman, &'static str> {
+    let chosen_word = word_manager::choose_random_word(config.get_file_name())?;
 
-pub fn initialize(file_name: &str) -> Result<Hangman, &'static str> {
-    let chosen_word = word_manager::choose_random_word(file_name)?;
-
-    return Ok(Hangman::new(chosen_word));
+    return Ok(Hangman::new_with_options(chosen_word, config.get_life_icon()));
 }

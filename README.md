@@ -1,2 +1,2 @@
 # hangman
-Hangman game made in Rust
+Hangman terminal-based game made in Rust

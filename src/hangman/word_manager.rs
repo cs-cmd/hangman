@@ -1,30 +1,3 @@
-// use std::fs::{File, read_to_string};
-
-// pub struct WordManager {
-//     words: Vec<String>,
-// }
-
-// impl WordManager {
-//     pub fn new(filename: &str) -> Result<WordManager, &'static str> {
-//         if filename.len() == 0 {
-//             return Err("Filename cannot be blank");
-//         }
-
-//         // If failed, return Err
-//         let file = File::open(filename)?;
-            
-//         let mut file_words: Vec<String> = Vec::new();
-
-//         for line in read_to_string(filename).unwrap().lines() {
-//             file_words.push(line.to_string());
-//         }
-        
-//         return Ok(WordManager {
-//             words: file_words,
-//         });
-//     }
-// }
-
 use rand::Rng;
 use std::fs;
 
