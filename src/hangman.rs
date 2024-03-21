@@ -40,7 +40,7 @@ impl Hangman {
     }
 
     // PRINTS [ x x x x x ];
-    pub fn print_lifebar(&self) -> String {
+    pub fn create_lifebar(&self) -> String {
         let mut lifebar = String::from("[");
 
         for life in 1..=MAX_LIVES {
@@ -58,7 +58,7 @@ impl Hangman {
         return lifebar;
     }
 
-    pub fn generate_word_hint(&self) -> String {
+    pub fn create_word_hint(&self) -> String {
         let mut word_hint = String::new();
 
         for char_at in self.chosen_word.chars() {

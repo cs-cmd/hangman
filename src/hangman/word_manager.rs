@@ -1,7 +1,7 @@
 use rand::Rng;
 use std::fs;
 
-pub fn choose_random_word(filename: &str) -> Result<String, &'static str> {
+pub fn get_random_word(filename: &str) -> Result<String, &'static str> {
     if filename.len() == 0 {
         return Err("Filename cannot be blank");
     }
