@@ -5,18 +5,34 @@ pub struct Config {
 };
 
 impl Config {  
-    pub fn write_config(user_name: &str, file_name: &str, life_icon: char) -> (){
+    pub fn new() -> Config {
+        return Config {
+            user_name: String::new(),
+            file_name: String::new(),
+            life_icon: 'x';
+        }
+    }
+    
+    pub fn new_with_options(user_name: &str, file_name: &str, life_icon: char) -> Config {
+        return Config {
+            user_name: String::from(user_name),
+            file_name: String::from(file_name),
+            life_icon,
+        };
+    }
 
+    pub fn write_config(user_name: &str, file_name: &str, life_icon: char) -> Result<(). &'static str>{
+        let mut file_handle = File::create(".config")?;
+        file_handle.write(format!("user_name={user_name}\nfile_name={file_name}\nlife_icon={life_icon}").as_bytes())?;
+        return Ok(());
     }
 
     pub fn write_config_and_return(user_name: &str, file_name: &str, life_icon) -> Config {
         write_config(user_name, file_name, life_icon);
-
-        return Config {
-            user_name,
-            file_name, 
-            life_icon,
-        };
+        if let Err(err_msg) = write_config(user_name, file_name, life_icon) {
+            println!(":: Error - could not create config file - {err_msg} ::");
+        }
+        return Config::new_with_options(user_name, file_name, life_icon);
     }
 
     pub fn get_life_icon(&self) -> char {
@@ -43,7 +59,7 @@ pub fn first_time_setup() -> Config {
             break;
         }        
         
-        println!("Invalid name value, please re-enter.");
+        println!(":: Invalid name value, please re-enter ::");
     }
 
     loop {
@@ -64,7 +80,7 @@ pub fn first_time_setup() -> Config {
         
         let mut icon_string: String;
         if let Err(_) = io::stdin().read_line(&mut icon_string) {
-            println!("Invalid life icon, please enter a single character.");
+            println!(":: Error - unable to read from console ::");
             continue;
         }
 
@@ -73,7 +89,7 @@ pub fn first_time_setup() -> Config {
             break;
         }
 
-        println!("Invalid character.");
+        println!(":: Invalid character ::");
     }
 
     return write_config_and_return(&user_name, &file_name, life_icon);
