@@ -1,18 +1,19 @@
 mod hangman;
 
-use std::io::{self, Write};
-//use crate::hangman::word_manager::WordManager;
+use std::io;
+use std::fs::File;
 use crate::hangman::{word_manager, ui_manager, game_setup};
 
 fn main() {
+    println!("{}", std::env::current_dir().unwrap().display());
     ui_manager::print_header();
 
     let config = match File::open(".config") {
         Err(_) => game_setup::first_time_setup(),
         Ok(file_handle) => game_setup::setup(file_handle),
-    }
+    };
 
-    ui_manager::print_introduction();
+    ui_manager::print_introduction(&config);
     
     let mut chosen_option: u8 = loop {
         ui_manager::print_menu();
@@ -28,8 +29,9 @@ fn main() {
         }
 
         println!("Please enter a number");
-    }
-
+    };
+    
+    println!("Option {} chosen...", chosen_option);
     // handle menu options
 }
 

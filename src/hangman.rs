@@ -4,6 +4,7 @@ pub mod game_setup;
 
 use std::collections::HashSet;
 use std::fmt;
+use crate::game_setup::Config;
 
 // can also use HashMap to combine the two `guesses` maps into a single
 // variables <char, bool> (if guesses, is either true or false if it contains
@@ -25,8 +26,8 @@ impl Hangman {
             chosen_word: word,
             successful_guesses: HashSet::new(),
             wrong_guesses: HashSet::new(),
-            lives: MAX_LIVES,
-            life_icon: DEFAULT_LIFE_ICON,
+            lives: Self::MAX_LIVES,
+            life_icon: Self::DEFAULT_LIFE_ICON,
         };
     }
     pub fn new_with_options(word: String, life_icon: char) -> Hangman {
@@ -34,7 +35,7 @@ impl Hangman {
             chosen_word: word,
             successful_guesses: HashSet::new(),
             wrong_guesses: HashSet::new(),
-            lives: MAX_LIVES,
+            lives: Self::MAX_LIVES,
             life_icon,
         };
     }
@@ -43,7 +44,7 @@ impl Hangman {
     pub fn create_lifebar(&self) -> String {
         let mut lifebar = String::from("[");
 
-        for life in 1..=MAX_LIVES {
+        for life in 1..=Self::MAX_LIVES {
             lifebar.push(' ');
 
             lifebar.push(if life <= self.lives {
@@ -84,7 +85,7 @@ impl fmt::Display for Hangman {
 }
 
 pub fn initialize(config: &Config) -> Result<Hangman, &'static str> {
-    let chosen_word = word_manager::choose_random_word(config.get_file_name())?;
+    let chosen_word = word_manager::get_random_word(config.get_file_name())?;
 
     return Ok(Hangman::new_with_options(chosen_word, config.get_life_icon()));
 }
