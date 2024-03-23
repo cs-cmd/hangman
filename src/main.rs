@@ -32,6 +32,8 @@ fn main() {
     };
     
     println!("Option {} chosen...", chosen_option);
+
+    
     // handle menu options
 }
 

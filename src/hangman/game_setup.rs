@@ -9,29 +9,25 @@ pub struct Config {
 
 impl Config {  
     pub fn new() -> Config {
-        return Config {
-            user_name: String::new(),
-            file_name: String::new(),
-            life_icon: 'x',
-        };
+        return Self::new_with_options(String::new(), String::new(), 'x');
     }
     
-    pub fn new_with_options(user_name: &str, file_name: &str, life_icon: char) -> Config {
+    pub fn new_with_options(user_name: String, file_name: String, life_icon: char) -> Config {
         return Config {
-            user_name: String::from(user_name),
-            file_name: String::from(file_name),
+            user_name: user_name,
+            file_name: file_name,
             life_icon,
         };
     }
 
-    pub fn write_config_and_return<'a>(user_name: &str, file_name: &str, life_icon: char) -> Result<Config, &'a str>{
+    pub fn write_config_and_return<'a>(user_name: String, file_name: String, life_icon: char) -> Result<Config, &'a str>{
         let mut file_handle = match File::create(".config") {
             Ok(file) => file,
             Err(err_msg) => return Err("File could not be opened for writing."),
         };
 
 
-        if let Err(err_msg) = file_handle.write(format!("user_name={user_name}\nfile_name={file_name}\nlife_icon={life_icon}\n").as_bytes()) {
+        if let Err(err_msg) = file_handle.write(format!("user_name={user_name}\nfile_name={file_name}\nlife_icon={life_icon}").as_bytes()) {
             return Err("File could not be written to");
         };
 
@@ -96,18 +92,55 @@ pub fn first_time_setup() -> Config {
         println!(":: Invalid character ::");
     };
 
-    match Config::write_config_and_return(&user_name, &file_name, life_icon) {
+    match Config::write_config_and_return(user_name, file_name, life_icon) {
         Ok(c) => return c,
         Err(_) => return Config::new(),
     };
 }
 
+// No serde, manual 
 pub fn setup(mut file_handle: File) -> Config {
     let mut file_contents = String::new();
-    match file_handle.read_to_string(&mut file_contents) {
-        Ok(_) => println!("{}", file_contents),
-        Err(err_msg) => println!("Could not read contents from file"),
-    }
+    
+    let config = match file_handle.read_to_string(&mut file_contents) {
+        Ok(_) => {
+            let mut user_name = String::new();
+            let mut file_name = String::new();
+            let mut life_icon: char = 'x';
 
-    return Config::new();
+            // username, filename, lifeicon
+            for arg in file_contents.lines() {
+                let pair: (&str, &str) = match arg.find('=') {
+                    Some(index) => (&arg[..index], &arg[index+1..]), 
+                    None => ("NO_EQUAL", "INVALID"),
+                };
+
+                match pair.0 {
+                    "user_name" => user_name = String::from(pair.1),
+                    "file_name" => file_name = String::from(pair.1),
+                    "life_icon" => life_icon = match pair.1.chars().next() {
+                        // 6 indents deep; not a good look :(
+                        Some(ch) => ch,
+                        None => {
+                            println!("Not a valid life icon character");
+                            'x'
+                        }
+                    },
+                    other => println!("Config parameter {} is not supported: {}", arg, other),
+                };
+            }
+
+            Config::new_with_options(user_name, file_name, life_icon)
+        },
+        Err(err_msg) => {
+            println!("Could not read contents from file");
+            Config::new()  
+        },
+    };
+
+    return config;
 }
+
+//pub fn setup_with_serde() -> Config {
+//    return todo()!;
+//}
