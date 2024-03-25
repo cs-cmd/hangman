@@ -1,3 +1,6 @@
+// GAME_SETUP
+// Handles and is used to represent setup logic for the game
+// from filename to aspects of user experience
 use std::io::{self, Write, Read};
 use std::fs::File;
 
@@ -8,8 +11,10 @@ pub struct Config {
 }
 
 impl Config {  
+    pub const DEFAULT_LIFE_ICON: char = 'x';
+
     pub fn new() -> Config {
-        return Self::new_with_options(String::new(), String::new(), 'x');
+        return Self::new_with_options(String::new(), String::new(), Self::DEFAULT_LIFE_ICON);
     }
     
     pub fn new_with_options(user_name: String, file_name: String, life_icon: char) -> Config {
@@ -42,6 +47,9 @@ impl Config {
     }
     pub fn get_file_name(&self) -> &str {
         return &self.file_name;
+    }
+    pub fn get_default_life_icon() -> char {
+        return Self::DEFAULT_LIFE_ICON;
     }
 }
 
@@ -103,7 +111,7 @@ pub fn setup(mut file_handle: File) -> Config {
     let mut file_contents = String::new();
 
     if let Err(err_msg) = file_hangle.read_to_string(&mut file_content) {
-        println!("Could not read content from file");
+        println!(":: Could not read content from file ::");
         return Config::new();
     }
 
@@ -111,12 +119,15 @@ pub fn setup(mut file_handle: File) -> Config {
     let mut param_found: [bool; 3] = [false; 3];
 
     for arg in file_contents.lines() {
-        let pair: (&str, &str) = arg.find('=');
-
-        // no equal sign, pair is not valid
-        if let None = pair {
-            println!("Parameter line {} is not valid.", arg);
-            continue;
+        let pair: (&str, &str)
+        
+        // find index of equal sign, split string into value and 
+        let pair = match arg.find('=') {
+            Some(index) => (&arg[..index], &arg[index..]),
+            None => {
+                println!(":: Parameter line {} is not valid ::", arg);
+                continue;
+            }
         }
 
         // get index of value to add, or continue
@@ -125,40 +136,47 @@ pub fn setup(mut file_handle: File) -> Config {
             "file_name" => 1,
             "life_icon" => 2,
             other => {
-                println!("Config parameter {} is not supported: {}", other, arg),
+                println!(":: Config parameter {} is not supported: {} ::", other, arg),
                 continue;
             }
         }
 
+        // if the parameter was already found, don't use again
         if param_found[ind] {
-            println!("Parameter already added, skipping");
+            println!(":: Parameter already added, skipping ::");
             continue;
         }
 
         param_found[ind] = true;
-
-        config_params[ind] = match ind {
-            // is char, needs to be handled differently
-            2 => match pair.1.char().next() {
-                Some(ch) => ch,
-                None => 'x'
-            }
-            other @ u8 => String::from(pair.1),
-            other => panic!("Other param found, panicking...");
-        };
+        config_params[ind] = pair.1;        
     }
 
-    // if one of the parameters wansn't found, return false and use default configuration
-    let all_found = config_params.for_each(|was_found| if !was_found { return false } );
-
+    // validate all three parameters are found
+    // if one of the parameters wansn't found or the length is less than 1, 
+    // return false and use default configuration
+    let all_found: bool = true;
+    
+    for found in config_params {
+        if !found ||
+            found.len() < 1 {
+            all_found = false,
+        }    
+    }
+    
+    // use default configuration if not found
     if !all_found {
-        println!("Config file not valid, using default values...");
+        println!(":: Config file not valid, using default values ::");
         return Config::new();
     }
 
+    // assign config params to values to pass in
+    // if char life_icon is not valid, use the default
+    let user_name = config_params[0]; 
+    let file_name = config_params[1];
+    let life_icon = match config_params[2].chars().next() {
+        Some(ch) => ch,
+        None => Config::get_default_life_icon(),
+    };
+
     return Config::new_with_options(user_name, file_name, life_icon)
 }
-
-//pub fn setup_with_serde() -> Config {
-//    return todo()!;
-//}

@@ -1,38 +1,62 @@
-mod hangman;
-
-use std::io;
+use std::io::{self, Write};
 use std::fs::File;
-use crate::hangman::{word_manager, ui_manager, game_setup};
+
+use crate::{game_setup, hangman, word_manager};
+
 
 fn main() {
-    ui_manager::print_header();
+    println!("***************************************");
+    println!("*** Welcome to the Hangman Program! ***");
+    println!("***************************************");
 
     let config = match File::open(".config") {
         Err(_) => game_setup::first_time_setup(),
         Ok(file_handle) => game_setup::setup(file_handle),
     };
 
-    ui_manager::print_introduction(&config);
-    
-    let mut chosen_option: u8 = loop {
-        ui_manager::print_menu();
+    // create hangman game instance
+//    let hangman_instance = match hangman::initialize(&config) {
+//        Ok(h) => h,
+//        Err(err_msg) => {
+//            println!("Error: {}", err_msg);
+//            return;
+//        }
+//    };
 
+    let hangman_instance = Hangman::new("Hello World!");
+    let cached_words = Vec::<String>::new();
+
+    println!("Hello, {}!", config.get_user_name());
+    
+    loop {
+        // let user select choice
         let mut input_string = String::new();
 
         if let Err(err_msg) = io::stdin().read_line(&mut input_string) {
-            panic!("Unable to read from command line: {err_msg}");
+            panic(":: Unable to read from command line: {err_msg} ::");
         }
 
-        if let Ok(num) = input_string.trim().parse::<u8>() {
-            break num;
+        let chosen_option: u8 = match input_string.trim().parse::<u8>() {
+            Ok(num) => num,
+            Err(_) => {
+                println!("Please enter a number");
+                continue;
+            }
         }
 
-        println!("Please enter a number");
-    };
-    
-    println!("Option {} chosen...", chosen_option);
+        let choice = match determine_menu_option(chosen_option) {
+            Ok(choice) => choice,
+            Err(msg) => println!(":: {} ::", msg),
+        };
 
+        match choice {
+            "PLAY" => todo!(),
+            "EDIT_FILE_NAME" => todo!(),
+            "CHANGE_NAME" => todo!(),
+            "EXIT" => break;
+        }
+    }
     
-    // handle menu options
+    println!("Thank you for playing Hangman!");
 }
 

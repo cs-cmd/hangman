@@ -1,3 +1,5 @@
+// HANGMAN
+// Represents the game state
 use std::collections::HashSet;
 use std::fmt;
 use crate::game_setup::Config;
@@ -15,7 +17,6 @@ pub struct Hangman {
 
 impl Hangman {
     const MAX_LIVES: u8 = 5;
-    const DEFAULT_LIFE_ICON: char = 'x';
 
     pub fn new(word: String) -> Hangman {
         return Hangman {
@@ -23,9 +24,10 @@ impl Hangman {
             successful_guesses: HashSet::new(),
             wrong_guesses: HashSet::new(),
             lives: Self::MAX_LIVES,
-            life_icon: Self::DEFAULT_LIFE_ICON,
+            life_icon: Config::get_default_life_icon(),
         };
     }
+
     pub fn new_with_options(word: String, life_icon: char) -> Hangman {
         return Hangman {
             chosen_word: word,
@@ -72,6 +74,31 @@ impl Hangman {
 
         return word_hint;
     }
+
+    pub fn guess_letter<'a>(&self, guessed_char: char) -> Result<&'a str, &'a str> {
+        if let Some(_) = self::successful_guesses.get(guessed_char) {
+            return Err("Already successfully guessed '{}'", guessed_char);
+        }
+
+        if let Some(_) = self::wrong_guesses.get(guessed_char) {
+            return Err("Already incorrectly guessed '{}'", guessed_char);
+        }
+
+        for char_at in self::chosen_word.chars() {
+            if guessed_char == char_at {
+                successful_guesses.insert(guessed_char);
+                return Ok("{} exists in the word!", guessed_char);
+            }
+        }
+
+        self::lives -= 1;
+        wrong_guesses.insert(guessed_char);
+        return Ok("{} is not in the word.", guessed_char);
+    } 
+
+    pub fn get_config(&self) -> &Config -> {
+        return self::config;
+    }
 }
 
 impl fmt::Display for Hangman {
@@ -80,8 +107,6 @@ impl fmt::Display for Hangman {
     }
 }
 
-//pub fn initialize(config: &Config) -> Result<Hangman, &'static str> {
-//    let chosen_word = word_manager::get_random_word(config.get_file_name())?;
-//
-//    return Ok(Hangman::new_with_options(chosen_word, config.get_life_icon()));
-//}
+pub fn initialize(config: &Config) -> Result<(Hangman, Vec<String>), &'static str> {
+    todo!();
+}
