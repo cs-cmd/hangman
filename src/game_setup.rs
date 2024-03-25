@@ -101,44 +101,62 @@ pub fn first_time_setup() -> Config {
 // No serde, manual 
 pub fn setup(mut file_handle: File) -> Config {
     let mut file_contents = String::new();
-    
-    let config = match file_handle.read_to_string(&mut file_contents) {
-        Ok(_) => {
-            let mut user_name = String::new();
-            let mut file_name = String::new();
-            let mut life_icon: char = 'x';
 
-            // username, filename, lifeicon
-            for arg in file_contents.lines() {
-                let pair: (&str, &str) = match arg.find('=') {
-                    Some(index) => (&arg[..index], &arg[index+1..]), 
-                    None => ("NO_EQUAL", "INVALID"),
-                };
+    if let Err(err_msg) = file_hangle.read_to_string(&mut file_content) {
+        println!("Could not read content from file");
+        return Config::new();
+    }
 
-                match pair.0 {
-                    "user_name" => user_name = String::from(pair.1),
-                    "file_name" => file_name = String::from(pair.1),
-                    "life_icon" => life_icon = match pair.1.chars().next() {
-                        // 6 indents deep; not a good look :(
-                        Some(ch) => ch,
-                        None => {
-                            println!("Not a valid life icon character");
-                            'x'
-                        }
-                    },
-                    other => println!("Config parameter {} is not supported: {}", arg, other),
-                };
+    let mut config_params: [String; 3] = [Default::default(); 3];
+    let mut param_found: [bool; 3] = [false; 3];
+
+    for arg in file_contents.lines() {
+        let pair: (&str, &str) = arg.find('=');
+
+        // no equal sign, pair is not valid
+        if let None = pair {
+            println!("Parameter line {} is not valid.", arg);
+            continue;
+        }
+
+        // get index of value to add, or continue
+        let ind: u8 = match pair.0 {
+            "user_name" => 0,
+            "file_name" => 1,
+            "life_icon" => 2,
+            other => {
+                println!("Config parameter {} is not supported: {}", other, arg),
+                continue;
             }
+        }
 
-            Config::new_with_options(user_name, file_name, life_icon)
-        },
-        Err(err_msg) => {
-            println!("Could not read contents from file");
-            Config::new()  
-        },
-    };
+        if param_found[ind] {
+            println!("Parameter already added, skipping");
+            continue;
+        }
 
-    return config;
+        param_found[ind] = true;
+
+        config_params[ind] = match ind {
+            // is char, needs to be handled differently
+            2 => match pair.1.char().next() {
+                Some(ch) => ch,
+                None => 'x'
+            }
+            other @ u8 => String::from(pair.1),
+            other => panic!("Other param found, panicking...");
+        };
+    }
+
+    // if one of the parameters wansn't found, return false and use default configuration
+    let all_found = config_params.for_each(|was_found| if !was_found { return false } );
+
+    if !all_found {
+        println!("Config file not valid, using default values...");
+        return Config::new();
+    }
+
+    return Config::new_with_options(user_name, file_name, life_icon)
 }
 
 //pub fn setup_with_serde() -> Config {

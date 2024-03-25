@@ -5,7 +5,6 @@ use std::fs::File;
 use crate::hangman::{word_manager, ui_manager, game_setup};
 
 fn main() {
-    println!("{}", std::env::current_dir().unwrap().display());
     ui_manager::print_header();
 
     let config = match File::open(".config") {

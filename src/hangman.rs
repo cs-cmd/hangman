@@ -1,7 +1,3 @@
-pub mod word_manager;
-pub mod ui_manager;
-pub mod game_setup;
-
 use std::collections::HashSet;
 use std::fmt;
 use crate::game_setup::Config;
@@ -84,8 +80,8 @@ impl fmt::Display for Hangman {
     }
 }
 
-pub fn initialize(config: &Config) -> Result<Hangman, &'static str> {
-    let chosen_word = word_manager::get_random_word(config.get_file_name())?;
-
-    return Ok(Hangman::new_with_options(chosen_word, config.get_life_icon()));
-}
+//pub fn initialize(config: &Config) -> Result<Hangman, &'static str> {
+//    let chosen_word = word_manager::get_random_word(config.get_file_name())?;
+//
+//    return Ok(Hangman::new_with_options(chosen_word, config.get_life_icon()));
+//}
