@@ -9,6 +9,7 @@ use crate::game_setup::{self, Config};
 // the character
 pub struct Hangman {
     chosen_word: String,
+    unique_letters_left: u8
     successful_guesses: HashSet::<char>,
     wrong_guesses: HashSet::<char>,
     lives: u8,
@@ -28,6 +29,13 @@ impl Hangman {
     const MAX_LIVES: u8 = 5;
 
     pub fn new(word: String) -> Hangman {
+        let unique_letters = HashSet::new();
+
+        for char in word.chars() {
+            if char
+        }
+        
+
         return Hangman {
             chosen_word: word,
             successful_guesses: HashSet::new(),
@@ -85,17 +93,21 @@ impl Hangman {
     }
 
     pub fn guess_letter(&mut self, guessed_char: char) -> GuessResult {
-        if let Some(_) = self.successful_guesses.get(&guessed_char) {
-            return GuessResult::AlreadyGuessed;
-        }
+        let char_upper = guessed_char.to_ascii_uppercase();
 
-        if let Some(_) = self.wrong_guesses.get(&guessed_char) {
+        if let Some(_) = self.successful_guesses.get(&char_upper) {
+            return GuessResult::AlreadyGuessed;
+        } 
+
+        if let Some(_) = self.wrong_guesses.get(&char_upper) {
             return GuessResult::AlreadyGuessed;
         }
 
         for char_at in self.chosen_word.chars() {
-            if guessed_char == char_at {
-                self.successful_guesses.insert(guessed_char);
+            if char_upper == char_at.to_ascii_uppercase() {
+                self.unique_letters_left -= 1;
+                // store letters as uppercase when successfully guessed
+                self.successful_guesses.insert(char_upper);
                 return GuessResult::CorrectGuess;
             }
         }
@@ -106,7 +118,7 @@ impl Hangman {
             return GuessResult::NoLivesLeft;
         }
 
-        self.wrong_guesses.insert(guessed_char);
+        self.wrong_guesses.insert(char_upper);
         return GuessResult::IncorrectGuess;
     } 
 
