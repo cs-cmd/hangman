@@ -25,15 +25,15 @@ impl Config {
         };
     }
 
-    pub fn write_config_and_return<'a>(user_name: String, file_name: String, life_icon: char) -> Result<Config, &'a str>{
+    pub fn write_config_and_return<'a>(user_name: String, file_name: String, life_icon: char) -> Result<Config, String>{
         let mut file_handle = match File::create(".config") {
             Ok(file) => file,
-            Err(err_msg) => return Err("File could not be opened for writing."),
+            Err(err_msg) => return Err(format!(":: File could not be opened for writing: {} ::", err_msg)),
         };
 
 
         if let Err(err_msg) = file_handle.write(format!("user_name={user_name}\nfile_name={file_name}\nlife_icon={life_icon}").as_bytes()) {
-            return Err("File could not be written to");
+            return Err(format!(":: File could not be written to: {} ::", err_msg));
         };
 
         return Ok(Self::new_with_options(user_name, file_name, life_icon));
@@ -110,36 +110,36 @@ pub fn first_time_setup() -> Config {
 pub fn setup(mut file_handle: File) -> Config {
     let mut file_contents = String::new();
 
-    if let Err(err_msg) = file_hangle.read_to_string(&mut file_content) {
+    if let Err(_) = file_handle.read_to_string(&mut file_contents) {
         println!(":: Could not read content from file ::");
         return Config::new();
     }
 
-    let mut config_params: [String; 3] = [Default::default(); 3];
+    const ARR_COPY_VAL: String = String::new();
+    let mut config_params: [String; 3] = [ARR_COPY_VAL; 3];
+
     let mut param_found: [bool; 3] = [false; 3];
 
     for arg in file_contents.lines() {
-        let pair: (&str, &str)
-        
         // find index of equal sign, split string into value and 
         let pair = match arg.find('=') {
-            Some(index) => (&arg[..index], &arg[index..]),
+            Some(index) => (&arg[..index], &arg[index+1..]),
             None => {
                 println!(":: Parameter line {} is not valid ::", arg);
                 continue;
             }
-        }
+        };
 
         // get index of value to add, or continue
-        let ind: u8 = match pair.0 {
+        let ind: usize = match pair.0 {
             "user_name" => 0,
             "file_name" => 1,
             "life_icon" => 2,
             other => {
-                println!(":: Config parameter {} is not supported: {} ::", other, arg),
+                println!(":: Config parameter {} is not supported: {} ::", other, arg);
                 continue;
-            }
-        }
+            },
+        };
 
         // if the parameter was already found, don't use again
         if param_found[ind] {
@@ -148,19 +148,19 @@ pub fn setup(mut file_handle: File) -> Config {
         }
 
         param_found[ind] = true;
-        config_params[ind] = pair.1;        
+        config_params[ind] = pair.1.to_string();        
     }
 
     // validate all three parameters are found
     // if one of the parameters wansn't found or the length is less than 1, 
     // return false and use default configuration
-    let all_found: bool = true;
+    let mut all_found: bool = true;
     
-    for found in config_params {
-        if !found ||
-            found.len() < 1 {
-            all_found = false,
-        }    
+    for i in 0..3 {
+        if !param_found[i] || config_params[i].len() < 1 {
+            all_found = false;
+            break;
+        }
     }
     
     // use default configuration if not found
@@ -171,12 +171,14 @@ pub fn setup(mut file_handle: File) -> Config {
 
     // assign config params to values to pass in
     // if char life_icon is not valid, use the default
-    let user_name = config_params[0]; 
-    let file_name = config_params[1];
-    let life_icon = match config_params[2].chars().next() {
+    let mut iter = config_params.into_iter();
+
+    let user_name = iter.next().expect("Required username"); 
+    let file_name: String = iter.next().expect("Required filename");
+    let life_icon: char = match iter.next().expect("Required life icon").chars().next() {
         Some(ch) => ch,
         None => Config::get_default_life_icon(),
     };
 
-    return Config::new_with_options(user_name, file_name, life_icon)
+    return Config::new_with_options(user_name, file_name, life_icon);
 }

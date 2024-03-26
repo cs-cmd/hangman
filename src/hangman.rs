@@ -1,8 +1,8 @@
 // HANGMAN
 // Represents the game state
 use std::collections::HashSet;
-use std::fmt;
-use crate::game_setup::Config;
+use std::{fmt, io::{self, Write}};
+use crate::game_setup::{self, Config};
 
 // can also use HashMap to combine the two `guesses` maps into a single
 // variables <char, bool> (if guesses, is either true or false if it contains
@@ -13,6 +13,15 @@ pub struct Hangman {
     wrong_guesses: HashSet::<char>,
     lives: u8,
     life_icon: char,
+}
+
+enum GuessResult {
+    CorrectGuess,
+    IncorrectGuess,
+    NoLivesLeft,
+    Won,
+    AlreadyGuessed,
+    Continue
 }
 
 impl Hangman {
@@ -75,29 +84,34 @@ impl Hangman {
         return word_hint;
     }
 
-    pub fn guess_letter<'a>(&self, guessed_char: char) -> Result<&'a str, &'a str> {
-        if let Some(_) = self::successful_guesses.get(guessed_char) {
-            return Err("Already successfully guessed '{}'", guessed_char);
+    pub fn guess_letter(&mut self, guessed_char: char) -> GuessResult {
+        if let Some(_) = self.successful_guesses.get(&guessed_char) {
+            return GuessResult::AlreadyGuessed;
         }
 
-        if let Some(_) = self::wrong_guesses.get(guessed_char) {
-            return Err("Already incorrectly guessed '{}'", guessed_char);
+        if let Some(_) = self.wrong_guesses.get(&guessed_char) {
+            return GuessResult::AlreadyGuessed;
         }
 
-        for char_at in self::chosen_word.chars() {
+        for char_at in self.chosen_word.chars() {
             if guessed_char == char_at {
-                successful_guesses.insert(guessed_char);
-                return Ok("{} exists in the word!", guessed_char);
+                self.successful_guesses.insert(guessed_char);
+                return GuessResult::CorrectGuess;
             }
         }
 
-        self::lives -= 1;
-        wrong_guesses.insert(guessed_char);
-        return Ok("{} is not in the word.", guessed_char);
+        self.lives -= 1;
+
+        if self.lives == 0 {
+            return GuessResult::NoLivesLeft;
+        }
+
+        self.wrong_guesses.insert(guessed_char);
+        return GuessResult::IncorrectGuess;
     } 
 
-    pub fn get_config(&self) -> &Config -> {
-        return self::config;
+    pub(self) fn guess_word(&mut self, guessed_word: String) -> GuessResult {
+        todo!();
     }
 }
 
@@ -107,6 +121,37 @@ impl fmt::Display for Hangman {
     }
 }
 
-pub fn initialize(config: &Config) -> Result<(Hangman, Vec<String>), &'static str> {
-    todo!();
+pub fn initialize(config: &Config) -> Result<(Hangman, Vec<String>), String> {
+    
+}
+
+pub fn play_game(hangman: &mut Hangman) -> Result<(), ()> {
+    loop {
+        println!("{}", hangman.create_lifebar());
+        println!("{}", hangman.create_word_hint());
+        print!("Select a letter: ");
+        let _ = io::stdout().flush();
+
+        let mut input_string: String = String::new();
+        if let Err(err) = io::stdin().read_line(&mut input_string) {
+            panic!("Unable to read from terminal: {}", err);
+        }
+
+        let trimmed_str = input_string.trim();
+
+        let result = match trimmed_str.len() {
+            0 => {
+                println!("No input entered");
+                GuessResult::Continue
+            },
+            1 => hangman.guess_letter(trimmed_str.chars().next().expect("Expected single char")),
+            len => hangman.guess_word(trimmed_str.to_string()),       
+        };
+
+        match result {
+            GuessResult::Won => return Ok(()),
+            GuessResult::NoLivesLeft => return Err(()),
+            _ => continue,
+        };
+    }
 }
