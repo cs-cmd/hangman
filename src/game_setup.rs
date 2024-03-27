@@ -38,19 +38,6 @@ impl Config {
 
         return Ok(Self::new_with_options(user_name, file_name, life_icon));
     }
-
-    pub fn get_life_icon(&self) -> char {
-        return self.life_icon;
-    }
-    pub fn get_user_name(&self) -> &str {
-        return &self.user_name;
-    }
-    pub fn get_file_name(&self) -> &str {
-        return &self.file_name;
-    }
-    pub fn get_default_life_icon() -> char {
-        return Self::DEFAULT_LIFE_ICON;
-    }
 }
 
 // NOTE: Creating a string, trimming it (returns a &str), and creating another

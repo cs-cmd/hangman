@@ -1,6 +1,6 @@
 // HANGMAN
 // Represents the game state
-use std::collections::HashSet;
+use std::collections::{HashSet, Hashmap};
 use std::{fmt, io::{self, Write}};
 use crate::game_setup::{self, Config};
 
@@ -25,23 +25,33 @@ impl Hangman {
     const MAX_LIVES: u8 = 5;
 
     pub fn new(word: String) -> Hangman {
+        return Self::new_with_icon(word, Config::DEFAULT_LIFE_ICON);
+    }
+
+    pub fn new_with_icon(word: String, icon: char) -> Hangman {
         // Store word as uppercase
         let word_upper: String = word.to_ascii_uppercase();
-
+        let mut unique_letters_left: u8 = 0;
         let mut unique_letters = HashSet::<char>::new();
+
         for char_at in word_upper.chars() {
+            if !char_at.is_alphabetic() {
+                continue;
+            }
+
             if let None = unique_letters.get(&char_at) {
+                unique_letters_left += 1;
                 unique_letters.insert(char_at);
             }
         }
 
         return Hangman {
             word: word_upper,
-            unique_letters_left: unique_letters.len() as u8,
+            unique_letters_left,
             unique_letters,
             guesses: HashMap::<char, bool>::new(),
             lives: Self::MAX_LIVES,
-            life_icon: 'x',
+            life_icon: icon,
         };
     }
 
@@ -124,7 +134,7 @@ impl Hangman {
     }
 
     pub fn play_game(&mut self) -> () {
-        let game_result = loop {
+        let end_message = loop {
             println!("{}", self.create_life_bar());
             println!("{}", self.create_word_hint());
             print!("Guess a letter: ");
@@ -136,6 +146,8 @@ impl Hangman {
             // remove new_line char from string
             let trimmed_string = input_string.trim();
 
+            println!("{}", trimmed_string);
+
             let guess_result = match trimmed_string.len() {
                 0 => {
                     println!("Please guess a letter or word");
@@ -145,19 +157,14 @@ impl Hangman {
                 _ => todo!(), 
             };
 
-
             match guess_result {
-                GuessResult::Victory => break Ok(()),
-                GuessResult::NoLivesLeft => break Err(()),
+                GuessResult::Victory => break "Victory",
+                GuessResult::NoLivesLeft => break "Lost",
                 _ => continue,
             };
         };
 
         println!("");
-        let end_message = match game_result {
-            Ok(_) => "Victory",
-            Err(_) => "Lost",
-        };
 
         println!("{}! The word was {}", end_message, self.word);
     }
@@ -165,7 +172,7 @@ impl Hangman {
 
 impl fmt::Display for Hangman {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        return write!(f, "Hangman instance word: {}", self.chosen_word);
+        return write!(f, "Hangman instance word: {}", self.word);
     }
 }
 
