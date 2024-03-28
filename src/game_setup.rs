@@ -25,18 +25,19 @@ impl Config {
         };
     }
 
-    pub fn write_config_and_return<'a>(user_name: String, file_name: String, life_icon: char) -> Result<Config, String>{
-        let mut file_handle = match File::create(".config") {
-            Ok(file) => file,
-            Err(err_msg) => return Err(format!(":: File could not be opened for writing: {} ::", err_msg)),
-        };
+    pub fn write_to_file(&self) -> Result<Config, String>{
+        return file_handle.write(
+            ".config",
+            format!("user_name={self.user_name}\nfile_name={self.file_name}\nlife_icon={self.life_icon}").as_bytes()
+        );
+    }
 
+    pub fn serialize(c: Config) -> Result<(), String> {
+        todo!();
+    }
 
-        if let Err(err_msg) = file_handle.write(format!("user_name={user_name}\nfile_name={file_name}\nlife_icon={life_icon}").as_bytes()) {
-            return Err(format!(":: File could not be written to: {} ::", err_msg));
-        };
-
-        return Ok(Self::new_with_options(user_name, file_name, life_icon));
+    pub fn deserialize(file_name: &str) -> Result<Config, String> {
+        todo!();
     }
 }
 
@@ -87,72 +88,66 @@ pub fn first_time_setup() -> Config {
         println!(":: Invalid character ::");
     };
 
-    match Config::write_config_and_return(user_name, file_name, life_icon) {
-        Ok(c) => return c,
-        Err(_) => return Config::new(),
-    };
+    let config = Config::new_with_options(user_name, file_name, life_icon);
+
+    if let Err(_) = config.write_to_file() {
+        println!(":: Unable to write config to file ::");
+    }
+
+    return config;
 }
 
 // No serde, manual 
-pub fn setup(mut file_handle: File) -> Config {
+pub fn setup(file_name: &str) -> Config {
+    let mut file_handle = match File.open(file_name) {
+        Ok(file) => file,
+        Err(_) => {
+            println!(":: Cannot open config file, using default config ::");
+            return Config::new();
+        }
+    };
+
+    let reader = BufReader(file_handle);
     let mut file_contents = String::new();
 
-    if let Err(_) = file_handle.read_to_string(&mut file_contents) {
-        println!(":: Could not read content from file ::");
-        return Config::new();
-    }
-
-    const ARR_COPY_VAL: String = String::new();
-    let mut config_params: [String; 3] = [ARR_COPY_VAL; 3];
-
     let mut param_found: [bool; 3] = [false; 3];
+    let mut config_params: [String; 3] = [Default::default(); 3];
+    let params_needed: usize = 3;
 
-    for arg in file_contents.lines() {
-        // find index of equal sign, split string into value and 
+    for arg in reader.lines() {
+        // get left and right hand side of equal sign in string
         let pair = match arg.find('=') {
-            Some(index) => (&arg[..index], &arg[index+1..]),
+            Some(index) => (&arg[..index], &arg[index + 1..]),
             None => {
-                println!(":: Parameter line {} is not valid ::", arg);
+                println!(":: Parameter line {} is not valid (NO_EQUALS) ::", arg);
                 continue;
             }
         };
 
-        // get index of value to add, or continue
         let ind: usize = match pair.0 {
             "user_name" => 0,
             "file_name" => 1,
             "life_icon" => 2,
-            other => {
-                println!(":: Config parameter {} is not supported: {} ::", other, arg);
+            _ => {
+                println!(":: Parameter {} not used in this program ::", pair.0);
                 continue;
             },
         };
 
-        // if the parameter was already found, don't use again
         if param_found[ind] {
-            println!(":: Parameter already added, skipping ::");
+            println!(":: Parameter already loaded; skipping ::");
             continue;
         }
 
         param_found[ind] = true;
-        config_params[ind] = pair.1.to_string();        
+        // trim param to remove newline char
+        config_params[ind] = pair.1.trim().to_string();
+        params_needed -= 1;
     }
 
-    // validate all three parameters are found
-    // if one of the parameters wansn't found or the length is less than 1, 
-    // return false and use default configuration
-    let mut all_found: bool = true;
-    
-    for i in 0..3 {
-        if !param_found[i] || config_params[i].len() < 1 {
-            all_found = false;
-            break;
-        }
-    }
-    
     // use default configuration if not found
-    if !all_found {
-        println!(":: Config file not valid, using default values ::");
+    if params_needed != 0 {
+        println!(":: Config file incomplete, using default values ::");
         return Config::new();
     }
 

@@ -22,7 +22,7 @@ enum GuessResult {
 }
 
 impl Hangman {
-    const MAX_LIVES: u8 = 5;
+    const MAX_LIVES: u8 = 6;
 
     pub fn new(word: String) -> Hangman {
         return Self::new_with_icon(word, Config::DEFAULT_LIFE_ICON);
@@ -94,6 +94,30 @@ impl Hangman {
         } 
 
         return hint_string;
+    }
+
+    fn draw_hangman_ascii(&self) -> () {
+        let mut count: usize = 0;
+
+        let print_parts = body_parts
+            .map(|part| {
+                count += 1;
+                if count > self.lives {
+                    part
+                } else {
+                    ' '
+                }
+            }
+        );
+
+        // print hangman ascii with values obtained from `map`
+        println!("_______  ");
+        println!("|     |  ");
+        println!("|     {}  ", print_parts[5]);
+        println!("|    {}{}{} ", print_parts[0], print_parts[4], print_parts[1]);
+        println!("|    {} {} ", print_parts[2], print_parts[3]);
+        println!("|        ");
+        println!("|-------|");
     }
 
     fn guess_letter(&mut self, guessed_char: char) -> GuessResult {
