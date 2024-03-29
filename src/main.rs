@@ -2,8 +2,8 @@ use std::io;
 use std::fs::File;
 
 use hangman_rs;
-use hangman_rs::game_setup::{self, Config};
-use hangman_rs::hangman::{self, Hangman};
+use hangman_rs::game_setup;
+use hangman_rs::hangman::Hangman;
 
 
 fn main() {
@@ -16,18 +16,12 @@ fn main() {
         Ok(file_handle) => game_setup::setup_with_handle(file_handle),
     };
 
-    println!("{:?}", config);
+    let mut words = Vec::<String>::new();
 
-    // create hangman game instance
-    let (mut hangman_instance, words) = match hangman::initialize(&config) {
-        Ok(h) => h,
-        Err(err_msg) => {
-            println!("Error: {}", err_msg);
-            return;
-        }
-    };
-
-    // let mut hangman_instance = Hangman::new("Hello World!".to_string());
+    if let Err(_) = hangman_rs::load_words(&mut words, &config) {
+        println!("Error loading words from file");
+        return;
+    }
 
     println!("Hello, {}!", config.get_user_name());
     
@@ -60,7 +54,11 @@ fn main() {
         println!("{}", choice);
 
         match choice {
-            "PLAY" => hangman_instance.play_game(),
+            "PLAY" => {
+                let word = hangman_rs::get_random_word(&words);
+                let mut hangman_instance = Hangman::new_with_icon(word, config.get_life_icon());
+                hangman_instance.play_game();
+            },
             "EDIT_FILE_NAME" => {
                 
             },
@@ -69,7 +67,7 @@ fn main() {
             },
             "EXIT" => break,
             other => {
-                panic!("Unknown choice returne from determine_menu_option: {}", other);
+                panic!("Unknown choice returned from determine_menu_option: {}", other);
             }
         }
     }

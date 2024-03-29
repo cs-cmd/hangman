@@ -33,8 +33,6 @@ pub fn print_menu_lines() {
     let _ = io::stdout().flush();
 }
 
-// Continuously reads from files. Can be overly large. Consider making struct that stores words that can be used
-// without needing to re-read file
 pub fn load_words(cached_words: &mut Vec<String>, config: &Config) -> Result<(), String> {
     let file_name = config.get_file_name();
 
