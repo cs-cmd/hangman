@@ -1,8 +1,8 @@
 // HANGMAN
 // Represents the game state
-use std::collections::{HashSet, Hashmap};
+use std::collections::{HashSet, HashMap};
 use std::{fmt, io::{self, Write}};
-use crate::game_setup::{self, Config};
+use crate::game_setup::Config;
 
 pub struct Hangman {
     word: String,
@@ -24,8 +24,17 @@ enum GuessResult {
 impl Hangman {
     const MAX_LIVES: u8 = 6;
 
+    const BODY_PARTS: [char; 6] = [
+        '/', // left leg
+        '\\', // right leg
+        '/', // right arm
+        '\\', // left arm
+        '|', // torso
+        'O', // head
+    ];
+
     pub fn new(word: String) -> Hangman {
-        return Self::new_with_icon(word, Config::DEFAULT_LIFE_ICON);
+        return Self::new_with_icon(word, Config::get_default_life_icon());
     }
 
     pub fn new_with_icon(word: String, icon: char) -> Hangman {
@@ -97,9 +106,9 @@ impl Hangman {
     }
 
     fn draw_hangman_ascii(&self) -> () {
-        let mut count: usize = 0;
+        let mut count: u8 = 0;
 
-        let print_parts = body_parts
+        let print_parts = Self::BODY_PARTS
             .map(|part| {
                 count += 1;
                 if count > self.lives {
@@ -165,12 +174,14 @@ impl Hangman {
             let _ = io::stdout().flush();
 
             let mut input_string = String::new();
-            io::stdin().read_line(&mut input_string).expect("Must be able to read from the command line");
+
+            if let Err(_) = io::stdin().read_line(&mut input_string) {
+                println!(":: Unable to read from command line ::");
+                return;
+            }
 
             // remove new_line char from string
             let trimmed_string = input_string.trim();
-
-            println!("{}", trimmed_string);
 
             let guess_result = match trimmed_string.len() {
                 0 => {
@@ -200,6 +211,14 @@ impl fmt::Display for Hangman {
     }
 }
 
-// pub fn initialize(config: &Config) -> Result<(Hangman, Vec<String>), String> {
-//     todo!();
-// }
+pub fn initialize(config: &Config) -> Result<(Hangman, Vec<String>), String> {
+    let mut words = Vec::<String>::new();
+
+    if let Err(msg) = crate::load_words(&mut words, config) {
+        return Err(format!("Unable to load words from file: {}", msg));
+    }
+
+    let first_random_word = crate::get_random_word(&words);
+
+    return Ok((Hangman::new_with_icon(first_random_word, config.get_life_icon()), words));
+}

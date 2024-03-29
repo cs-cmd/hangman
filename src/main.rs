@@ -1,7 +1,10 @@
-use std::io::{self, Write};
+use std::io;
 use std::fs::File;
 
-use hangman::{game_setup, hangman::Hangman};
+use hangman_rs;
+use hangman_rs::game_setup::{self, Config};
+use hangman_rs::hangman::{self, Hangman};
+
 
 fn main() {
     println!("***************************************");
@@ -10,11 +13,13 @@ fn main() {
 
     let config = match File::open(".config") {
         Err(_) => game_setup::first_time_setup(),
-        Ok(file_handle) => game_setup::setup(file_handle),
+        Ok(file_handle) => game_setup::setup_with_handle(file_handle),
     };
 
+    println!("{:?}", config);
+
     // create hangman game instance
-    let mut hangman_instance = match hangman::initialize(&config) {
+    let (mut hangman_instance, words) = match hangman::initialize(&config) {
         Ok(h) => h,
         Err(err_msg) => {
             println!("Error: {}", err_msg);
@@ -23,12 +28,11 @@ fn main() {
     };
 
     // let mut hangman_instance = Hangman::new("Hello World!".to_string());
-    let cached_words = Vec::<String>::new();
 
     println!("Hello, {}!", config.get_user_name());
     
     loop {
-        hangman::print_menu_lines();
+        hangman_rs::print_menu_lines();
 
         // let user select choice
         let mut input_string = String::new();
@@ -45,7 +49,7 @@ fn main() {
             }
         };
 
-        let choice = match hangman::determine_menu_option(chosen_option) {
+        let choice = match hangman_rs::determine_menu_option(chosen_option) {
             Ok(ret_choice) => ret_choice,
             Err(msg) => {
                 println!(":: {} ::", msg);
@@ -56,13 +60,7 @@ fn main() {
         println!("{}", choice);
 
         match choice {
-            "PLAY" => {
-                let result = hangman::hangman::play_game(&mut hangman_instance);
-                println!("{}", match result {
-                    Ok(_) => "You win! Play again?",
-                    Err(_) => "You lost! Try again?",
-                });
-            },
+            "PLAY" => hangman_instance.play_game(),
             "EDIT_FILE_NAME" => {
                 
             },

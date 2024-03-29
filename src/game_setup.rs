@@ -4,6 +4,7 @@
 use std::io::{self, Write, Read};
 use std::fs::File;
 
+#[derive(Debug)]
 pub struct Config {
     user_name: String,
     file_name: String,
@@ -11,7 +12,7 @@ pub struct Config {
 }
 
 impl Config {  
-    pub const DEFAULT_LIFE_ICON: char = 'x';
+    const DEFAULT_LIFE_ICON: char = 'x';
 
     pub fn new() -> Config {
         return Self::new_with_options(String::new(), String::new(), Self::DEFAULT_LIFE_ICON);
@@ -25,11 +26,20 @@ impl Config {
         };
     }
 
-    pub fn write_to_file(&self) -> Result<Config, String>{
-        return file_handle.write(
-            ".config",
-            format!("user_name={self.user_name}\nfile_name={self.file_name}\nlife_icon={self.life_icon}").as_bytes()
-        );
+    pub fn write_to_file(&self) -> Result<(), String>{
+        let mut file_handle = match File::create(".config") {
+            Ok(file) => file,
+            Err(_) => return Err("Unable to open config file for writing".to_string()),
+        };
+
+        if let Err(_) = file_handle.write(format!("user_name={}\nfile_name={}\nlife_icon={}", 
+                                          self.user_name,
+                                          self.file_name,
+                                          self.life_icon).as_bytes()) {
+            return Err("Unable to write config data to file".to_string());
+        }
+
+        return Ok(());
     }
 
     pub fn serialize(c: Config) -> Result<(), String> {
@@ -38,6 +48,22 @@ impl Config {
 
     pub fn deserialize(file_name: &str) -> Result<Config, String> {
         todo!();
+    }
+
+    pub fn get_file_name(&self) -> &str {
+        return &self.file_name;
+    }
+    
+    pub fn get_user_name(&self) -> &str {
+        return &self.user_name;
+    }
+
+    pub fn get_life_icon(&self) -> char {
+        return self.life_icon;
+    }
+
+    pub fn get_default_life_icon() -> char {
+        return Self::DEFAULT_LIFE_ICON;
     }
 }
 
@@ -90,31 +116,36 @@ pub fn first_time_setup() -> Config {
 
     let config = Config::new_with_options(user_name, file_name, life_icon);
 
-    if let Err(_) = config.write_to_file() {
-        println!(":: Unable to write config to file ::");
+    if let Err(msg) = config.write_to_file() {
+        println!(":: Unable to write config to file: {}  ::", msg);
     }
 
     return config;
 }
 
-// No serde, manual 
 pub fn setup(file_name: &str) -> Config {
-    let mut file_handle = match File.open(file_name) {
-        Ok(file) => file,
+    return match File::open(file_name) {
+        Ok(file_handle) => setup_with_handle(file_handle),
         Err(_) => {
             println!(":: Cannot open config file, using default config ::");
-            return Config::new();
-        }
+            Config::new()
+        },
     };
+}
 
-    let reader = BufReader(file_handle);
+// No serde, manual 
+pub fn setup_with_handle(mut file_handle: File) -> Config {
     let mut file_contents = String::new();
+    if let Err(_) = file_handle.read_to_string(&mut file_contents) {
+        println!("Cannot read config file");
+        return Config::new();
+    }
 
     let mut param_found: [bool; 3] = [false; 3];
-    let mut config_params: [String; 3] = [Default::default(); 3];
-    let params_needed: usize = 3;
+    let mut config_params: Vec<String> = vec![String::new(); 3];
+    let mut params_needed: usize = 3;
 
-    for arg in reader.lines() {
+    for arg in file_contents.lines() {
         // get left and right hand side of equal sign in string
         let pair = match arg.find('=') {
             Some(index) => (&arg[..index], &arg[index + 1..]),
